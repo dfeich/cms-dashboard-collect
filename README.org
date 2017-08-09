@@ -1,0 +1,125 @@
+#+MACRO: NEWLINE @@latex:\@@ @@html:<br>@@
+#+TITLE: Automatic collection of CMS dashboard values into tables
+# #+SUBTITLE:
+#+DESCRIPTION:
+#+DATE: 09. 08. 2017
+#+AUTHOR: Derek Feichtinger
+#+EMAIL:  derek.feichtinger@psi.ch
+#+KEYWORDS:
+#+LANGUAGE: en
+
+#+OPTIONS: ':nil *:t -:t ::t <:t \n:nil ^:t arch:headline
+#+OPTIONS: author:t c:nil creator:nil d:(not "LOGBOOK") date:t
+#+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil stat:t
+#+OPTIONS: tags:t tasks:t tex:t timestamp:t toc:nil todo:t |:t
+
+#+PROPERTY: ATTACH_DIR README-att
+#+PROPERTY: ATTACH_DIR_INHERIT t
+
+#+EXCLUDE_TAGS: noexport
+#+SELECT_TAGS: export
+
+#+PROPERTY: header-args :eval never-export
+
+* Collecting site metrics from the CERN LHC/CMS dashboard
+
+  Ths little prototype library =dashboardmetrics.py= enables one to get tabular data in the form
+  of [[http://pandas.pydata.org/][Pandas]] data frames from the dashboard REST services (compare to visualizations on the [[http://dashb-cms-job-dev.cern.ch/dashboard/request.py/dailysummary#button=cpuconsumption&sites%255B%255D=T2_CH_CSCS&activities%255B%255D=all&datatiers%255B%255D=All+DataTiers&sitesSort=2&start=2017-05-05&end=2017-05-26&timerange=daily&granularity=Daily&generic=0&sortby=1&series=All][Dashboard]]).
+  
+  #+BEGIN_SRC python :results output :exports both
+      from dashboardmetrics import *
+
+      start = '2017-05-05'
+      end = '2017-05-26'
+      mysite = 'T2_CH_CSCS'
+
+      df = get_metricstable(start, end, mysite)
+
+      print df
+    #+END_SRC
+
+    #+RESULTS:
+    #+begin_example
+		  good_cpu_h  all_cpu_h  good_wallt_h  all_wallt_h  good_wallt_%  \
+    jobtype                                                                        
+    analysistest         0.0        0.3           0.0          1.9           0.0   
+    hctest            4221.3     4233.0        5013.2       7213.2          69.5   
+    production         267.1      267.1         283.1        390.4          72.5   
+    reprocessing      1756.9     1756.9        2051.8       2051.9         100.0   
+    hcxrootd           942.0      944.7        1480.2       1571.9          94.2   
+    psst                 0.0        0.0           0.0          0.0           NaN   
+    analysis        105662.1   133938.9      165278.4     326166.2          50.7   
+    unknown              0.0        0.0           0.0          0.0           NaN   
+    ALL_JOBS        112849.4   141140.9      174106.7     337395.5          51.6   
+
+		  good_cpu_eff_%  
+    jobtype                       
+    analysistest             0.0  
+    hctest                  99.7  
+    production             100.0  
+    reprocessing           100.0  
+    hcxrootd                99.7  
+    psst                     NaN  
+    analysis                78.9  
+    unknown                  NaN  
+    ALL_JOBS                80.0  
+#+end_example
+
+
+* Nice table formatting for Emacs org mode
+
+  A little source snippet that will render nice tables within an org mode document
+
+  #+NAME: src_sitemetrics
+  #+BEGIN_SRC python :results output raw drawer :var start="2017-05-05" end="2017-05-26" mysite="T2_CH_CSCS" :exports both
+    import orgbabelhelper as obh
+    from dashboardmetrics import *
+
+    df = get_metricstable(start, end, mysite)
+
+    print obh.dataframe_to_orgtable(df, caption='Job statistics for %s from %s to %s' % (mysite,start,end),
+				    hlines=[1,-1]
+    )
+  #+END_SRC
+
+  #+RESULTS: src_sitemetrics
+  :RESULTS:
+  #+CAPTION: Job statistics for T2_CH_CSCS from 2017-05-05 to 2017-05-26
+  | jobtype      | good_cpu_h | all_cpu_h | good_wallt_h | all_wallt_h | good_wallt_% | good_cpu_eff_% |
+  |--------------+------------+-----------+--------------+-------------+--------------+----------------|
+  | analysistest |        0.0 |       0.3 |          0.0 |         1.9 |          0.0 |            0.0 |
+  | hctest       |     4221.3 |    4233.0 |       5013.2 |      7213.2 |         69.5 |           99.7 |
+  | production   |      267.1 |     267.1 |        283.1 |       390.4 |         72.5 |          100.0 |
+  | reprocessing |     1756.9 |    1756.9 |       2051.8 |      2051.9 |        100.0 |          100.0 |
+  | hcxrootd     |      942.0 |     944.7 |       1480.2 |      1571.9 |         94.2 |           99.7 |
+  | psst         |        0.0 |       0.0 |          0.0 |         0.0 |              |                |
+  | analysis     |   105662.1 |  133938.9 |     165278.4 |    326166.2 |         50.7 |           78.9 |
+  | unknown      |        0.0 |       0.0 |          0.0 |         0.0 |              |                |
+  |--------------+------------+-----------+--------------+-------------+--------------+----------------|
+  | ALL_JOBS     |   112849.4 |  141140.9 |     174106.7 |    337395.5 |         51.6 |           80.0 |
+
+  :END:
+
+
+  This can easily be used within org document by using the CALL syntax
+
+  : #+CALL: src_sitemetrics("2017-07-27", "2017-08-07")
+  #+CALL: src_sitemetrics("2017-07-27", "2017-08-07")
+
+  #+RESULTS:
+  :RESULTS:
+  #+CAPTION: Job statistics for T2_CH_CSCS from 2017-07-27 to 2017-08-07
+  | jobtype      | good_cpu_h | all_cpu_h | good_wallt_h | all_wallt_h | good_wallt_% | good_cpu_eff_% |
+  |--------------+------------+-----------+--------------+-------------+--------------+----------------|
+  | analysistest |        4.9 |      19.8 |          5.6 |       205.2 |          2.7 |           24.7 |
+  | hctest       |     3430.1 |    3430.9 |       3759.2 |      3798.1 |         99.0 |          100.0 |
+  | production   |    12298.3 |   12322.1 |      20557.8 |     30570.3 |         67.2 |           99.8 |
+  | hcxrootd     |      438.9 |     440.0 |        715.7 |       737.5 |         97.0 |           99.8 |
+  | analysis     |   130556.9 |  138486.4 |     168971.0 |    235659.7 |         71.7 |           94.3 |
+  | unknown      |        0.0 |       0.0 |          0.0 |         0.0 |              |                |
+  |--------------+------------+-----------+--------------+-------------+--------------+----------------|
+  | ALL_JOBS     |   146729.1 |  154699.2 |     194009.3 |    270970.8 |         71.6 |           94.8 |
+
+  :END:
+
+   
