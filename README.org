@@ -68,7 +68,9 @@
 
 * Nice table formatting for Emacs org mode
 
-  A little source snippet that will render nice tables within an org mode document
+  A little source snippet that will render nice tables within an org mode document. It makes use of my
+  =orgbabelhelper= library which is described as part of my [[https://github.com/dfeich/org-babel-examples/blob/master/python/pythonbabel.org][org mode babel examples]] on github (actually it
+  is tangled from that org file). You can get it also directly from [[https://anaconda.org/dfeich/orgbabelhelper][anaconda cloud]].
 
   #+NAME: src_sitemetrics
   #+BEGIN_SRC python :results output raw drawer :var start="2017-05-05" end="2017-05-26" mysite="T2_CH_CSCS" :exports both
